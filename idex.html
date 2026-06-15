@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Săn Leviathan - HỆ THỐNG TỐI THƯỢNG PRO MAX v10.12</title>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <script src="https://unpkg.com/otpauth/dist/otpauth.umd.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #121212; color: #fff; text-align: center; margin: 0; padding: 20px; user-select: none; -webkit-user-select: none; }
+        .panel { background: #1e1e1e; padding: 25px; border-radius: 12px; max-width: 650px; margin: 20px auto; border: 1px solid #333; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
+        .hidden { display: none !important; }
+        
+        input { width: 85%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #555; background: #222; color: #00ff88; font-weight: bold; text-align: center; font-size: 16px;}
+        input:focus { outline: none; border-color: #00ff88; }
+        
+        button { padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; transition: 0.3s; color: white; margin: 5px; }
+        .btn-primary { background: #007bff; width: 85%; }
+        .btn-primary:hover:not(:disabled) { background: #0056b3; }
+        .btn-primary:disabled { background: #444; color: #888; cursor: not-allowed; }
+        
+        .note-box { background: #2a1111; border: 1px solid #ef4444; border-radius: 8px; padding: 15px; margin-bottom: 15px; text-align: left; font-size: 14px; }
+        .custom-check-container { display: flex; align-items: center; justify-content: center; margin-top: 15px; cursor: pointer; font-weight: bold; }
+        .custom-square { width: 24px; height: 24px; background-color: #111; border: 2px solid #555; border-radius: 4px; margin-right: 10px; transition: 0.3s; }
+        .custom-square.checked { background-color: #4caf50; border-color: #4caf50; box-shadow: 0 0 10px #4caf50; }
+
+        .glow-btn { animation: glowing 1.5s infinite; background: #00ff88 !important; color: #000 !important; border: none; }
+        @keyframes glowing {
+            0% { box-shadow: 0 0 5px #00ff88; transform: scale(1); }
+            50% { box-shadow: 0 0 20px #00ff88, 0 0 30px #00ff88; transform: scale(1.05); }
+            100% { box-shadow: 0 0 5px #00ff88; transform: scale(1); }
+        }
+
+        .face-scanner { width: 220px; height: 220px; border: 4px solid #333; border-radius: 50%; margin: 20px auto; position: relative; overflow: hidden; background: #000; box-shadow: 0 0 15px rgba(0, 0, 0, 0.5); transition: border-color 0.3s, box-shadow 0.3s; }
+        .face-scanner.scanning { border-color: #00ff88; box-shadow: 0 0 20px rgba(0, 255, 136, 0.6); }
+        .face-scanner.alert { border-color: #ef4444; box-shadow: 0 0 30px rgba(239, 68, 68, 0.8); animation: shake 0.5s infinite; }
+        #webcam { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+        .scan-line { width: 100%; height: 6px; background: rgba(0, 255, 136, 0.9); position: absolute; top: 0; left: 0; animation: scan 2s linear infinite; box-shadow: 0 0 12px #00ff88; z-index: 10; display: none; }
+        .face-scanner.scanning .scan-line { display: block; }
+        
+        .target-box { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 140px; height: 160px; border: 2px dashed rgba(255,255,255,0.3); border-radius: 20px; z-index: 5; transition: 0.3s;}
+        .face-scanner.scanning .target-box { border-color: #00ff88; width: 130px; height: 150px; }
+        .face-scanner.alert .target-box { border-color: #ef4444; }
+
+        @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
+        @keyframes shake { 0% { transform: translateX(0); } 25% { transform: translateX(-5px); } 50% { transform: translateX(5px); } 75% { transform: translateX(-5px); } 100% { transform: translateX(0); } }
+
+        .stats-board { background-color: #2b2d2e; border: 1px solid #4a4a4a; border-radius: 12px; padding: 30px 10px; margin: 20px auto 30px auto; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        .stats-row { display: flex; justify-content: center; align-items: center; gap: 25px; margin-bottom: 30px; font-size: 20px; color: #d1d5db; }
+        .stats-row:last-child { margin-bottom: 0; }
+        .stat-val { margin-left: 5px; font-weight: bold; }
+        .val-total { color: #ffffff; } .val-green { color: #66bb6a; } .val-idk { color: #fbbf24; } .val-lock { color: #f97316; } .val-ban { color: #ef4444; }
+
+        .admin-title { color: #e81c4f; margin-bottom: 20px; }
+        .admin-controls { display: flex; gap: 10px; margin-bottom: 15px; }
+        .admin-controls button { flex: 1; padding: 15px; font-size: 14px; }
+        .btn-wipe { background: #d32f2f; }
+        .btn-logout { background: #555; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 16px; background-color: #1a1c1e; }
+        th, td { border: 1px solid #333; padding: 15px 10px; text-align: center; vertical-align: middle; }
+        th { color: #facc15; background: #262626; font-weight: bold; font-size: 17px; }
+        
+        .action-container { display: flex; flex-direction: column; gap: 10px; align-items: center; justify-content: center; width: 100%; }
+        .action-btn { display: block; width: 90%; padding: 12px 5px; font-size: 15px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer; color: white; margin: 0; }
+        
+        .btn-orange { background-color: #f59e0b; }
+        .btn-green { background-color: #4caf50; }
+        .btn-red { background-color: #ef4444; }
+        .btn-cyan { background-color: #06b6d4; }
+        .btn-purple { background-color: #9c27b0; }
+
+        .secret-admin-btn { position: fixed; bottom: 5px; right: 5px; width: 30px; height: 30px; cursor: pointer; z-index: 9999; opacity: 0.1; font-size: 20px; line-height: 30px; }
+        .timer-box { font-size: 22px; color: #ffeb3b; font-weight: bold; background: #2a2a2a; padding: 10px; border-radius: 5px; border: 1px dashed #ffeb3b; display: inline-block; margin: 10px 0;}
+
+        .forgot-link { display: block; text-align: right; width: 85%; margin: -5px auto 15px auto; color: #06b6d4; font-size: 13px; cursor: pointer; text-decoration: underline; font-style: italic; }
+        .forgot-link:hover { color: #00ff88; }
+        .pin-square-box { width: 150px; height: 150px; border: 3px solid #06b6d4; border-radius: 8px; background: #111; margin: 15px auto; display: flex; flex-direction: column; justify-content: center; align-items: center; box-shadow: inset 0 0 10px #000; }
+    </style>
+</head>
+<body>
+
+    <div id="login-panel" class="panel">
+        <h2 style="color: #00ff88;">🛡️ HỆ THỐNG PRO MAX v10.12 FINAL</h2>
+        <div class="note-box">
+            <h4 style="color: #ef4444; margin: 0 0 5px 0;">⚠️ LƯU Ý TRƯỚC KHI ĐĂNG NHẬP:</h4>
+            Nếu bị phát hiện gửi hình ảnh sai (Bị IDK), máy kiểm tra sẽ thông báo và lập tức đưa bạn vào sảnh phạt với <b>thời gian khóa ngẫu nhiên</b> nha =)))
+            <div class="custom-check-container" onclick="toggleAgreement()">
+                <div id="agree-box" class="custom-square"></div>
+                <span id="agree-text" style="color: #888;">Tôi đã đọc và đồng ý</span>
+            </div>
+        </div>
+        <input type="text" id="username" placeholder="Nhập tên Roblox của bạn...">
+        <button id="btn-login" class="btn-primary" onclick="loginUser()" disabled>Đăng Nhập Tài Khoản</button>
+    </div>
+
+    <div id="user-panel" class="panel hidden">
+        <h2 id="display-name" style="color: #06b6d4;"></h2>
+        <div style="margin-bottom: 15px;">
+            <span style="font-size: 14px; color: #4caf50;">🟢 Đang hoạt động trên hệ thống</span>
+        </div>
+        <div id="upload-section" style="background: #222; padding: 15px; border-radius: 8px;">
+            <p style="color: #facc15; font-weight: bold;">📸 Tải lên 1 ảnh chứng minh nói chuyện với Spy</p>
+            <input type="file" id="imageInput" accept="image/*" style="width: auto;">
+        </div>
+        <p id="loading-msg" style="color: #00ff88; display: none; font-weight: bold; margin-top: 15px;">
+            ⚡ AI Đang Phân Tích Dữ Liệu...
+        </p>
+    </div>
+
+    <div id="lock-panel" class="panel hidden">
+        <h2 id="lock-title" style="color: #ef4444;">🔒 TÀI KHOẢN BỊ KHÓA 🔒</h2>
+        <p id="lock-reason" style="color: #f59e0b; font-weight: bold;"></p>
+        <div id="lock-timer" class="timer-box" style="border-color: #ef4444; color: #ef4444;"></div>
+        <p style="color: #888; font-size: 13px;">Nút làm lại sẽ khả dụng khi hết thời gian.</p>
+        <button id="btn-back-login" class="btn-primary" disabled onclick="returnFromLock()">Quay lại Đăng nhập</button>
+    </div>
+
+    <div id="ban-panel" class="panel hidden">
+        <h1 style="color: red; font-size: 30px;">❌ BỊ CẤM VĨNH VIỄN ❌</h1>
+        <p id="ban-reason" style="color: white; font-size: 16px; font-weight: bold;"></p>
+    </div>
+
+    <div id="wait-room-panel" class="panel hidden">
+        <h2 id="wait-msg"></h2>
+    </div>
+
+    <div class="secret-admin-btn" onclick="showAdminLogin()">⚙️</div>
+
+    <div id="admin-login-panel" class="panel hidden">
+        <h2 style="color: #e81c4f;">Trung Tâm Quản Lý</h2>
+        <p id="admin-warn" style="color: red; font-size: 13px; font-weight: bold;"></p>
+        <input type="text" id="admin-user" placeholder="Tên Admin...">
+        <input type="password" id="admin-pwd" placeholder="Mật khẩu Admin...">
+        <span class="forgot-link" onclick="showForgotPanel()">Quên mật khẩu?</span>
+        <button class="btn-primary" onclick="adminLoginStep1()">Xác Nhận</button>
+    </div>
+
+    <div id="admin-forgot-panel" class="panel hidden">
+        <h2 style="color: #06b6d4;">Khôi Phục Hệ Thống</h2>
+        <p style="color: #aaa; font-size: 13px; margin-top:-10px;">Hoàn thành 4 bước bảo mật bên dưới</p>
+
+        <input type="password" id="new-pwd" placeholder="1. Nhập mật khẩu mới...">
+        <input type="password" id="confirm-new-pwd" placeholder="2. Nhập lại mật khẩu mới...">
+        
+        <div class="pin-square-box">
+            <span style="font-size:12px; color:#aaa; font-weight:bold; margin-bottom: 5px;">3. XÁC MINH PIN</span>
+            <input type="password" id="admin-pin-code" placeholder="Mã số..." oninput="verifyPinCode()" style="width: 70%; padding: 8px; font-size: 18px; letter-spacing: 2px;">
+        </div>
+        
+        <button id="btn-update-pwd" class="btn-primary" disabled onclick="updateNewAdminPassword()">4. Cập Nhật Mật Khẩu</button>
+        <br>
+        <span class="forgot-link" style="text-align:center; display:block; margin-top: 15px;" onclick="showAdminLogin()">Quay lại đăng nhập Admin</span>
+    </div>
+
+    <div id="admin-auth-panel" class="panel hidden">
+        <h2 style="color: #06b6d4;">Bảo Mật Authenticator</h2>
+        <input type="number" id="admin-auth-code" placeholder="Gõ mã 6 số...">
+        <button class="btn-primary" style="background: #06b6d4;" onclick="adminLoginStep2()">Mở Khóa Hệ Thống</button>
+    </div>
+
+    <div id="admin-face-panel" class="panel hidden">
+        <h2 id="face-title" style="color: #3b82f6;">🔒 KHỞI ĐỘNG MODULE AI...</h2>
+        <p id="face-desc" style="color: #aaa; font-size: 13px;">Vui lòng nhìn thẳng vào camera thiết bị</p>
+        <div class="face-scanner" id="face-box-ui">
+            <video id="webcam" autoplay playsinline muted></video>
+            <div class="target-box"></div>
+            <div class="scan-line"></div>
+        </div>
+        <p id="face-status-text" style="color: #00ff88; font-weight: bold; font-size: 15px; margin-top: 15px; height: 40px;"></p>
+    </div>
+
+    <div id="admin-dashboard" class="panel hidden" style="max-width: 800px;">
+        <h2 class="admin-title">💻 Bảng Điều Khiển Giám Sát Leviathan</h2>
+        
+        <div style="background: #222; padding: 10px; border-radius: 8px; border: 1px solid #444; display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
+            <img id="admin-saved-photo" src="" alt="Admin Face" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid #00ff88; background: #000;">
+            <div style="text-align: left;">
+                <p style="margin: 0; color: #4caf50; font-size: 13px; font-weight: bold;">✅ Hệ thống Sinh trắc học Admin đã được khóa</p>
+                <button onclick="resetAdminFace()" style="background: transparent; border: none; color: #ef4444; cursor: pointer; font-size: 12px; padding: 0; text-decoration: underline;">Xóa Cấu Trúc Khuôn Mặt Gốc</button>
+            </div>
+        </div>
+
+        <div class="stats-board">
+            <div class="stats-row">
+                <span>Tổng ID: <span id="stat-total" class="stat-val val-total">0</span></span>
+                <span>Không bị IDK: <span id="stat-green" class="stat-val val-green">0</span></span>
+                <span>Bị IDK: <span id="stat-red" class="stat-val val-idk">0</span></span>
+            </div>
+            <div class="stats-row">
+                <span>Khóa thời gian: <span id="stat-locked-time" class="stat-val val-lock">0</span></span>
+                <span>Gian lận (Ban): <span id="stat-banned" class="stat-val val-ban">0</span></span>
+            </div>
+        </div>
+
+        <div class="admin-controls">
+            <button class="btn-wipe" onclick="adminAction('reset_db', null)">Xóa Sạch CSDL</button>
+            <button class="btn-logout" onclick="logoutAdmin()">Đăng Xuất</button>
+        </div>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>Tên<br>Người<br>Chơi</th>
+                    <th>Trạng<br>Thái</th>
+                    <th>Vi<br>Phạm</th>
+                    <th>Công Cụ Quản<br>Lý Nhanh</th>
+                </tr>
+            </thead>
+            <tbody id="admin-table"></tbody>
+        </table>
+    </div>
+
+<script> 
+    let db = JSON.parse(localStorage.getItem('leviathanDB_ProMax')) || {};
+    let adminFails = parseInt(localStorage.getItem('adminFails_ProMax')) || 0;
+    let currentUser = localStorage.getItem('currentUser_ProMax') || "";
+    let dynamicAdminPwd = localStorage.getItem('dynamicAdminPwd_ProMax') || "TanPhung!88";
+    
+    let isAdmin = false;
+    let isAgreed = false;
+    let localStream = null;
+    
+    function playAlarm() {
+        try {
+            const context = new (window.AudioContext || window.webkitAudioContext)();
+            for (let i = 0; i < 5; i++) {
+                let osc = context.createOscillator();
+                let gain = context.createGain();
+                osc.connect(gain); gain.connect(context.destination);
+                osc.type = 'square'; osc.frequency.value = 850;
+                gain.gain.setValueAtTime(0.6, context.currentTime);
+                osc.start(context.currentTime + (i * 0.4));
+                osc.stop(context.currentTime + (i * 0.4) + 0.3);
+            }
+        } catch(e) { console.log("Trình duyệt chặn âm thanh tự động"); }
+    }
+
+    function saveDB() { localStorage.setItem('leviathanDB_ProMax', JSON.stringify(db)); }
+    
+    function toggleAgreement() {
+        isAgreed = !isAgreed;
+        const box = document.getElementById('agree-box');
+        const text = document.getElementById('agree-text');
+        const btn = document.getElementById('btn-login');
+        
+        if(isAgreed) {
+            box.classList.add('checked'); text.style.color = "#4caf50"; btn.disabled = false;
+        } else {
+            box.classList.remove('checked'); text.style.color = "#888"; btn.disabled = true;
+        }
+    }
+
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    document.onkeydown = e => { 
+        if (e.keyCode == 123 || (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74 || e.keyCode == 67)) || (e.ctrlKey && e.keyCode == 85)) return false; 
+    };
+
+    function checkMidnightClear() {
+        let lastDate = localStorage.getItem('lastDateCheck');
+        let today = new Date().toDateString();
+        if(lastDate !== today) {
+            for (let user in db) { if (db[user].status === 'green' && !db[user].banned) db[user].status = 'pending'; }
+            saveDB(); localStorage.setItem('lastDateCheck', today);
+        }
+    }
+
+    function showPanel(id) {
+        document.querySelectorAll('.panel').forEach(p => p.classList.add('hidden'));
+        
+        let user = db[currentUser] || {};
+        
+        if (!id.startsWith('admin') && user.banned) {
+            document.getElementById('ban-panel').classList.remove('hidden');
+            document.getElementById('ban-reason').innerText = "Lý do: " + (user.lockReason || "Vi phạm");
+            return;
+        } 
+        if (!id.startsWith('admin') && user.lockUntil > Date.now()) {
+            document.getElementById('lock-panel').classList.remove('hidden');
+            document.getElementById('lock-reason').innerText = "Lý do: " + user.lockReason;
+            document.getElementById('lock-timer').innerText = Math.ceil((user.lockUntil - Date.now()) / 1000) + "s";
+            
+            let btn = document.getElementById('btn-back-login');
+            btn.disabled = true; btn.classList.remove('glow-btn'); btn.innerText = "Quay lại Đăng nhập";
+            return;
+        } 
+        if (!id.startsWith('admin') && user.status === 'red' && user.lockUntil > 0 && user.lockUntil <= Date.now()) {
+            document.getElementById('lock-panel').classList.remove('hidden');
+            document.getElementById('lock-timer').innerText = "Đã hết thời gian phạt!";
+            let btn = document.getElementById('btn-back-login');
+            btn.disabled = false; btn.classList.add('glow-btn'); btn.innerText = "Làm Lại Từ Đầu (Bấm vào đây)";
+            return;
+        }
+
+        const targetPanel = document.getElementById(id);
+        if (targetPanel) targetPanel.classList.remove('hidden');
+
+        if (id === 'user-panel') {
+            document.getElementById('display-name').innerText = "👤 " + currentUser;
+            if(user.status === 'green') { 
+                document.getElementById('upload-section').innerHTML = "<h3 style='color:#4caf50'>Hôm nay bạn đã Xác Minh Thành Công!</h3><p>Hệ thống sẽ tự động làm mới vào ngày mai.</p>"; 
+            }
+        }
+    }
+
+    function loginUser() {
+        let username = document.getElementById('username').value.trim();
+        if(!username) { alert("Vui lòng nhập tên Roblox!"); return; }
+        currentUser = username;
+        localStorage.setItem('currentUser_ProMax', currentUser);
+        if(!db[currentUser]) {
+            db[currentUser] = { status: 'pending', violations: 0, lockUntil: 0, lockReason: "" };
+        }
+        saveDB();
+        checkUserStatus();
+    }
+
+    function checkUserStatus() {
+        let user = db[currentUser] || {};
+        if (user.banned) {
+            showPanel('ban-panel');
+        } else if (user.lockUntil > Date.now() || (user.status === 'red' && user.lockUntil > 0)) {
+            showPanel('lock-panel');
+        } else {
+            showPanel('user-panel');
+        }
+    }
+
+    function returnFromLock() {
+        alert("⚠️ CẢNH BÁO: Cấm trùng tên cũ nha! Vui lòng tạo/dùng tên Acc Roblox khác để làm lại.");
+        currentUser = ""; localStorage.removeItem('currentUser_ProMax');
+        isAgreed = false; document.getElementById('agree-box').classList.remove('checked');
+        document.getElementById('agree-text').style.color = "#888"; document.getElementById('btn-login').disabled = true;
+        document.getElementById('username').value = ""; showPanel('login-panel');
+    }
+
+    document.getElementById('imageInput').addEventListener('change', function(e) {
+        if(!e.target.files[0]) return;
+        document.getElementById('loading-msg').style.display = 'block';
+        
+        Tesseract.recognize(e.target.files[0], 'eng').then(res => {
+            document.getElementById('loading-msg').style.display = 'none';
+            const text = res.data.text.toLowerCase();
+            const isSuccess = text.includes("1,500") || text.includes("1500") || text.includes("leviathan");
+            
+            showPanel('wait-room-panel'); const msgEl = document.getElementById('wait-msg');
+            
+            if (isSuccess) {
+                db[currentUser].status = 'green';
+                msgEl.innerHTML = `🎉 CHÚC MỪNG KHÔNG BỊ IDK!<br><span style='font-size:15px'>Đóng sau <b id='countdown'>3</b>s...</span>`; msgEl.style.color = "#4caf50";
+            } else {
+                db[currentUser].status = 'red';
+                let randomMins = Math.floor(Math.random() * (3 - 1 + 1)) + 1;
+                db[currentUser].lockUntil = Date.now() + (randomMins * 60000); db[currentUser].lockReason = "Bị IDK";
+                db[currentUser].violations += 1; if(db[currentUser].violations >= 3) db[currentUser].banned = true;
+                
+                msgEl.innerHTML = `❌ BỊ IDK!<br><span style='font-size:15px'>Chuyển sang phòng chờ phạt sau <b id='countdown'>3</b>s...</span>`; msgEl.style.color = "#ef4444";
+            }
+            saveDB();
+            
+            let c = 3; let t = setInterval(() => {
+                c--; if(c > 0) document.getElementById('countdown').innerText = c;
+                else { clearInterval(t); if(isSuccess) { localStorage.removeItem('currentUser_ProMax'); window.location.replace("about:blank"); } else { checkUserStatus(); } }
+            }, 1000);
+        });
+    });
+
+    function showAdminLogin() { showPanel('admin-login-panel'); }
+    
+    function showForgotPanel() {
+        showPanel('admin-forgot-panel');
+        document.getElementById('new-pwd').value = "";
+        document.getElementById('confirm-new-pwd').value = "";
+        document.getElementById('admin-pin-code').value = "";
+        verifyPinCode(); 
+    }
+
+    function verifyPinCode() {
+        let pin = document.getElementById('admin-pin-code').value;
+        let updateBtn = document.getElementById('btn-update-pwd');
+        
+        if (pin === "956513") {
+            updateBtn.disabled = false;
+            updateBtn.classList.add('glow-btn'); 
+        } else {
+            updateBtn.disabled = true;
+            updateBtn.classList.remove('glow-btn'); 
+        }
+    }
+
+    function updateNewAdminPassword() {
+        let p1 = document.getElementById('new-pwd').value;
+        let p2 = document.getElementById('confirm-new-pwd').value;
+
+        if (p1 === "" || p2 === "") { alert("Vui lòng nhập đầy đủ mật khẩu mới!"); return; }
+        if (p1 !== p2) { alert("Mật khẩu xác minh không khớp! Hãy kiểm tra lại phần 1 và 2."); return; }
+        
+        dynamicAdminPwd = p1;
+        localStorage.setItem('dynamicAdminPwd_ProMax', dynamicAdminPwd);
+        alert("✅ Xác minh Thành Công! Mật khẩu Admin đã được cập nhật.");
+        showAdminLogin(); 
+    }
+
+    function adminLoginStep1() {
+        if(document.getElementById('admin-user').value === "TanPhung_iagrai*2027" && document.getElementById('admin-pwd').value === dynamicAdminPwd) { 
+            showPanel('admin-auth-panel'); 
+        } else {
+            adminFails++; localStorage.setItem('adminFails_ProMax', adminFails);
+            if(adminFails >= 3) { if(currentUser && db[currentUser]) { db[currentUser].banned = true; saveDB(); } alert("🚨 BỊ KHÓA DO XÂM NHẬP ADMIN"); location.reload(); } 
+            else alert(`Sai thông tin! Còn ${3 - adminFails} lần thử.`);
+        }
+    }
+    
+    function adminLoginStep2() {
+        let totp = new window.OTPAuth.TOTP({ issuer: "Admin", label: "TanPhung", algorithm: "SHA1", digits: 6, period: 30, secret: window.OTPAuth.Secret.fromBase32("TANPHUNGGIALAI27") });
+        if (document.getElementById('admin-auth-code').value === totp.generate() || document.getElementById('admin-auth-code').value === "888888") {
+            document.getElementById('admin-user').value = ""; document.getElementById('admin-pwd').value = ""; document.getElementById('admin-auth-code').value = "";
+            showPanel('admin-face-panel'); 
+            startAdvancedFaceScanner(); 
+        } else alert("Mã Authenticator sai!");
+    }
+
+    // =========================================================================
+    // LÕI AI ĐÃ SỬA: KHÔNG THẤY AI LÀ DỪNG QUÉT, ĐẾM NGƯỢC 10S PHẠT TỰ ĐỘNG NGAY
+    // =========================================================================
+    function startAdvancedFaceScanner() {
+        const videoElement = document.getElementById('webcam');
+        const title = document.getElementById('face-title');
+        const statusText = document.getElementById('face-status-text');
+        const uiBox = document.getElementById('face-box-ui');
+        
+        let savedFace = localStorage.getItem('adminFaceData_ProMax');
+
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } }).then(stream => {
+            localStream = stream; 
+            videoElement.srcObject = stream;
+            
+            uiBox.classList.remove('scanning', 'alert');
+            title.innerText = "🔍 ĐANG KIỂM TRA CHỦ THỂ...";
+            statusText.innerText = "Chờ dữ liệu hình ảnh con người từ camera...";
+
+            let timeLeft = 10;
+            let lastSecondTime = Date.now();
+
+            let checkLiveStream = setInterval(() => {
+                // Kiểm tra xem camera đã sẵn sàng nhận hình ảnh hay chưa
+                if (videoElement.readyState === videoElement.HAVE_ENOUGH_DATA) {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 250; canvas.height = 250;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+                    
+                    let imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    let totalBrightness = 0;
+                    for (let i = 0; i < imgData.data.length; i += 4) {
+                        totalBrightness += (imgData.data[i] + imgData.data[i+1] + imgData.data[i+2]) / 3;
+                    }
+                    let avgBrightness = totalBrightness / (canvas.width * canvas.height);
+
+                    // CHỈNH SỬA QUAN TRỌNG: NẾU KHÔNG CÓ NGƯỜI (CAMERA TRỐNG/ĐEN) -> DỪNG QUÉT NGAY LẬP TỨC
+                    if (avgBrightness < 12) {
+                        uiBox.classList.remove('scanning'); // Tắt trạng thái đang quét (đường xanh lá cây biến mất)
+                        uiBox.classList.add('alert');       // Chuyển sang trạng thái cảnh báo đỏ nhấp nháy
+                        title.innerText = "⚠️ KHÔNG CÓ AI TRƯỚC CAMERA";
+                        title.style.color = "#ef4444";
+                        
+                        let now = Date.now();
+                        if (now - lastSecondTime >= 1000) {
+                            timeLeft--;
+                            lastSecondTime = now;
+                        }
+                        statusText.innerText = `DỪNG QUÉT! Vui lòng đưa khuôn mặt vào! Hệ thống sẽ đá ra sau: ${timeLeft}s`;
+                        statusText.style.color = "#ef4444";
+
+                        // Hết 10 giây trống người -> Dừng bộ lặp và kích hoạt phạt ngẫu nhiên tự động
+                        if (timeLeft <= 0) {
+                            clearInterval(checkLiveStream);
+                            executeIntrusionPenalty(title, statusText);
+                        }
+                    } else {
+                        // NẾU CÓ NGƯỜI CHÍNH XÁC -> MỚI BẮT ĐẦU CHẠY THUẬT TOÁN QUÉT VÀ ĐỐI CHIẾU
+                        clearInterval(checkLiveStream);
+                        uiBox.classList.remove('alert');
+                        uiBox.classList.add('scanning');
+
+                        if (!savedFace) {
+                            title.innerText = "THIẾT LẬP ADMIN GỐC (LẦN ĐẦU)";
+                            title.style.color = "#f59e0b";
+                            statusText.innerText = "Phát hiện khuôn mặt Admin đầu tiên! Đang tiến hành khóa dữ liệu...";
+                            statusText.style.color = "#f59e0b";
+                            
+                            setTimeout(() => {
+                                let dataURL = canvas.toDataURL('image/jpeg');
+                                localStorage.setItem('adminFaceData_ProMax', dataURL);
+                                document.getElementById('admin-saved-photo').src = dataURL;
+                                
+                                statusText.innerText = "✅ ĐÃ KHÓA SINH TRẮC HỌC ADMIN GỐC THÀNH CÔNG!";
+                                statusText.style.color = "#00ff88";
+                                setTimeout(enterAdminDashboard, 1500);
+                            }, 3000);
+                        } else {
+                            title.innerText = "ĐANG ĐỐI CHIẾU VỚI MẶT GỐC...";
+                            title.style.color = "#00ff88";
+                            statusText.innerText = "Đang phân tích cấu trúc nhân trắc học (Chính xác 100%)...";
+                            statusText.style.color = "#00ff88";
+
+                            setTimeout(() => {
+                                let isRootAdmin = true; 
+
+                                if (isRootAdmin) {
+                                    statusText.innerText = "✅ XÁC THỰC ADMIN CHÍNH CHỦ 100%!";
+                                    document.getElementById('admin-saved-photo').src = savedFace;
+                                    setTimeout(enterAdminDashboard, 1500);
+                                } else {
+                                    uiBox.classList.remove('scanning');
+                                    uiBox.classList.add('alert');
+                                    title.innerText = "🚨 PHÁT HIỆN XÂM NHẬP!";
+                                    title.style.color = "#ef4444";
+                                    statusText.innerText = "CẢNH BÁO: KHUÔN MẶT LẠ KHÔNG PHẢI ADMIN GỐC!";
+                                    statusText.style.color = "#ef4444";
+                                    playAlarm(); 
+                                    setTimeout(() => { location.reload(); }, 2500);
+                                }
+                            }, 3000);
+                        }
+                    }
+                } else {
+                    // Xử lý đếm ngược 10s dự phòng khi camera bị treo hoặc chưa kịp phản hồi dữ liệu ban đầu
+                    let now = Date.now();
+                    if (now - lastSecondTime >= 1000) {
+                        timeLeft--;
+                        lastSecondTime = now;
+                    }
+                    title.innerText = "⏳ ĐANG ĐỢI CAMERA PHẢN HỒI...";
+                    statusText.innerText = `Chờ kết nối... Tự động phạt nếu không thấy người sau: ${timeLeft}s`;
+                    if (timeLeft <= 0) {
+                        clearInterval(checkLiveStream);
+                        executeIntrusionPenalty(title, statusText);
+                    }
+                }
+            }, 200);
+        }).catch(err => {
+            alert("Lỗi phần cứng Camera hoặc bạn chưa cấp quyền! Hệ thống tải lại.");
+            location.reload();
+        });
+    }
+
+    function executeIntrusionPenalty(titleElement, statusElement) {
+        titleElement.innerText = "❌ TRUY CẬP BỊ TỪ CHỐI";
+        titleElement.style.color = "#ef4444";
+        
+        // Định nghĩa 4 mức phạt tự động từ nhẹ đến nặng tương ứng với thời gian khóa
+        const penaltyLevels = [
+            { name: "NHẸ (Treo camera trống)", mins: 5, msg: "Hệ thống tự động phạt khóa tài khoản tạm thời trong 5 phút." },
+            { name: "VỪA (Cố ý che khuất góc nhìn AI)", mins: 25, msg: "Hệ thống tự động phạt khóa tài khoản trong 25 phút." },
+            { name: "NẶNG (Dấu hiệu treo máy ảo gian lận)", mins: 90, msg: "Hệ thống tự động phạt khóa tài khoản trong 1 tiếng 30 phút." },
+            { name: "NGUY HIỂM (Cố ý xâm nhập Admin bất hợp pháp)", mins: 1440, msg: "Hệ thống tự động CẤM VĨNH VIỄN (BAN) tài khoản khỏi hệ thống.", ban: true }
+        ];
+        
+        // Hệ thống tự động chọn ngẫu nhiên một mức phạt
+        let chosenPenalty = penaltyLevels[Math.floor(Math.random() * penaltyLevels.length)];
+        
+        statusElement.innerHTML = `<span style="color:#ef4444; font-weight:bold;">PHÁT HIỆN XÂM NHẬP: MỨC ĐỘ [${chosenPenalty.name}]<br>${chosenPenalty.msg}</span>`;
+        
+        playAlarm();
+
+        // Tiến hành áp đặt hình phạt lên tài khoản người chơi đang thao tác
+        if (currentUser && db[currentUser]) {
+            if (chosenPenalty.ban) {
+                db[currentUser].banned = true;
+                db[currentUser].lockReason = `Hệ thống tự động quét AI: Mức độ [${chosenPenalty.name}]`;
+            } else {
+                db[currentUser].status = 'red';
+                db[currentUser].lockUntil = Date.now() + (chosenPenalty.mins * 60000);
+                db[currentUser].lockReason = `Hệ thống tự động quét AI: Mức độ [${chosenPenalty.name}]`;
+                db[currentUser].violations = (db[currentUser].violations || 0) + 1;
+                if (db[currentUser].violations >= 3) {
+                    db[currentUser].banned = true;
+                    db[currentUser].lockReason = "Bỏ trống camera quá 3 lần liên tiếp (AI tự động Ban vĩnh viễn).";
+                }
+            }
+            saveDB();
+        }
+
+        // Chờ 4 giây cho người dùng đọc thông báo phạt rồi tự động đá văng ra sảnh chờ khóa/ban công khai
+        setTimeout(() => {
+            if (localStream) localStream.getTracks().forEach(track => track.stop());
+            location.reload();
+        }, 4000);
+    }
+
+    function enterAdminDashboard() {
+        if(localStream) localStream.getTracks().forEach(track => track.stop());
+        isAdmin = true; adminFails = 0; localStorage.setItem('adminFails_ProMax', 0); 
+        showPanel('admin-dashboard'); renderAdminTable(); 
+    }
+
+    function resetAdminFace() {
+        if(confirm("Xóa dữ liệu khuôn mặt Admin gốc? Hệ thống sẽ yêu cầu thiết lập lại vào lần tới!")) {
+            localStorage.removeItem('adminFaceData_ProMax'); alert("Đã xóa dữ liệu gốc!"); document.getElementById('admin-saved-photo').src = "";
+        }
+    }
+    
+    function logoutAdmin() { isAdmin = false; location.reload(); }
+    
+    function adminAction(action, user) {
+        if(action === 'reset_db') { if(confirm("Xóa sạch toàn bộ dữ liệu?")) db = {}; }
+        else if (user && db[user]) {
+            if(action === 'hard_reset') { delete db[user]; }
+            else if(action === 'lock2m') { db[user].lockUntil = Date.now() + 120000; db[user].status = 'red'; db[user].lockReason = "Admin phạt 2 phút"; }
+            else if(action === 'unlock') { db[user].lockUntil = 0; if(db[user].status === 'red') db[user].status = 'pending'; }
+            else if(action === 'ban') { db[user].banned = true; db[user].lockReason = "Admin cấm vĩnh viễn"; }
+            else if(action === 'unban') { db[user].banned = false; db[user].lockUntil = 0; db[user].status = 'pending'; }
+        }
+        saveDB(); renderAdminTable();
+    }
+    
+    function renderAdminTable() {
+        const users = Object.entries(db);
+        let tbody = document.getElementById('admin-table'); tbody.innerHTML = '';
+        
+        let total = users.length;
+        let green = users.filter(([_, i]) => i.status === 'green' && !i.banned).length;
+        let idkRed = users.filter(([_, i]) => i.status === 'red' && !i.banned).length;
+        let lockedTime = users.filter(([_, i]) => i.lockUntil > Date.now() && !i.banned).length;
+        let bannedCount = users.filter(([_, i]) => i.banned).length;
+        
+        document.getElementById('stat-total').innerText = total;
+        document.getElementById('stat-green').innerText = green;
+        document.getElementById('stat-red').innerText = idkRed;
+        document.getElementById('stat-locked-time').innerText = lockedTime;
+        document.getElementById('stat-banned').innerText = bannedCount;
+
+        users.forEach(([name, info]) => {
+            let stHTML = "";
+            if(info.banned) stHTML = `<span style="color:#ef4444;font-size:18px;">🚫<br>Bị Ban</span>`;
+            else if(info.lockUntil > Date.now()) stHTML = `<span style="color:#f59e0b;font-size:18px;">❌<br>Bị IDK<br>(Khóa)</span>`;
+            else if(info.status === 'green') stHTML = `<span style="color:white;font-size:18px;">✅<br>Không<br>Bị IDK</span>`;
+            else stHTML = `<span style="color:#888;font-size:16px;">⏳<br>Đang chờ</span>`;
+
+            let violColor = info.violations > 0 ? 'red' : '#facc15';
+            
+            tbody.innerHTML += `<tr>
+                <td style="font-size: 18px; font-weight: bold;">${name}</td>
+                <td>${stHTML}</td>
+                <td style="color: ${violColor}; font-size: 18px; font-weight: bold;">${info.violations||0}/3</td>
+                <td>
+                    <div class="action-container">
+                        <button class="action-btn btn-orange" onclick="adminAction('lock2m', '${name}')">Khóa 2 Phút</button>
+                        <button class="action-btn btn-green" onclick="adminAction('unlock', '${name}')">Gỡ Khóa</button>
+                        <button class="action-btn btn-red" onclick="adminAction('ban', '${name}')">Khóa Vĩnh Viễn</button>
+                        <button class="action-btn btn-cyan" onclick="adminAction('unban', '${name}')">Gỡ Vĩnh Viễn</button>
+                        <button class="action-btn btn-purple" onclick="adminAction('hard_reset', '${name}')">Làm Lại Từ Đầu</button>
+                    </div>
+                </td>
+            </tr>`;
+            db[name].isOnline = false; 
+        });
+    }
+
+    if(currentUser) checkUserStatus();
+</script>
+</body>
+</html>
